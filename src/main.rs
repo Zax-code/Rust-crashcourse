@@ -1,46 +1,35 @@
+use std::str::FromStr;
+
 trait Area{
     fn area(&self) -> f64;
 }
 
-struct Square<T>{
-    area_value : f64,
-    side : T,
+struct Square{
+    side : f64,
 }
 
-impl Square<u32> {
-    fn new(param : u32) -> Self{
-        return Square::<u32>{ side: param, area_value : (param*param) as f64};
+impl Square {
+    fn new<T : TryInto<f64>>(param : T ) -> Self
+    {
+        let _side = param.try_into().unwrap_or(0.0);
+        return Square{ side: _side, };
     }
 }
 
-impl Square<f64> {
-    fn new(param : f64) -> Self{
-        return Square::<f64>{ side: param, area_value : (param*param) as f64};
-    }
-}
-
-impl Square<String> {
-    fn new(param : &str) -> Self{
-        let side_value = param.parse::<f64>().unwrap();
-        return Square::<String>{ side: String::from(param), area_value : side_value*side_value};
-    }
-}
-
-impl<T> Area for Square<T>{
+impl Area for Square{
     fn area(&self) -> f64{
-        return self.area_value;
+        return self.side * self.side;
     }
 }
-
 struct Triangle{
     a : f64,
     b : f64,
     c : f64
 }
 
-impl  Triangle {
-    fn new(_a : f64,_b : f64,_c : f64) -> Self { 
-        return Triangle{a: _a, b: _b, c: _c };
+impl Triangle {
+    fn new<T : TryInto<f64>>(_a : T,_b : T,_c : T) -> Self { 
+        return Triangle{a: _a.try_into().unwrap_or(0.0), b: _b.try_into().unwrap_or(0.0), c: _c.try_into().unwrap_or(0.0) };
     }
 }
  impl Area for Triangle{
@@ -50,31 +39,32 @@ impl  Triangle {
     }
  }
 
+#[derive(Clone,Copy)]
 struct Pyramid<T,Y>{
     base : T,
     height : Y,
 
 }
-impl<T,Y> Pyramid<T, Y>{
+impl<T : Area,Y : TryInto<f64>+Copy> Pyramid<T,Y>{
     fn new(s : T, h : Y) -> Self {
         return Pyramid { base: s, height: h }
     }
     fn volume(&self) -> f64{
-        return self.base.area() * self.height as f64;
+        let x : f64  = self.base.area();
+        let h : f64 = self.height.try_into().unwrap_or(0.0);
+        return x*h;
     }
 }
 
 fn main() {
-    let square = Square::<u32>::new(5);
-    let square_float = Square::<f64>::new(5.4);
-    let square_string = Square::<String>::new("6");
+    let square = Square::new::<u32>(5);
+    let square_float = Square::new::<f64>(5.4);
 
     println!("square area is {}", square.area());
     println!("square_float area is {}", square_float.area());
-    println!("square_string area is {}", square_string.area());
 
     let triangle = Triangle::new(14.9, 20.1, 16.0);
-    let pyramid_square = Pyramid::<Square<u32>, f64>::new(square, 24.3);
+    let pyramid_square = Pyramid::<Square, f64>::new(square, 24.3);
     let pyramid_triangle = Pyramid::<Triangle, f64>::new(triangle, 24.3);
 
     println!("pyramid_square volume is {}", pyramid_square.volume());
